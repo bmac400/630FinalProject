@@ -22,8 +22,8 @@ BEGIN
                 GROUP BY CUBE (x.inst, x.name)', v_nums[(i-1)*2+j], v_nums[(i-1)*2+j], doms[j], start_year, end_year);
         END LOOP;
         -- Increment start_year and end_year after each iteration of the outer loop
-        start_year := start_year + 1; -- increment by 5
-        end_year := end_year + 1;     -- increment by 5
+        start_year := start_year + 1; 
+        end_year := end_year + 1;     
     END LOOP;
 END$$;
 
