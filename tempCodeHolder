@@ -1,6 +1,5 @@
-create C table;
 
-
+--Create C tables this is step 2
 DO $$
 DECLARE
     doms text[] := ARRAY['com', 'edu'];
@@ -28,7 +27,7 @@ BEGIN
     END LOOP;
 END$$;
 
-This generates U values
+--This generates U values This is STEP 1. If you get spot where x.inst x.name are both null in C tables its the same value
 
 DO $$
 DECLARE
@@ -58,7 +57,7 @@ BEGIN
 END$$;
 
 
--- 3. Generates Full Outer Join, need to parameterize this to handle more than u4
+-- Step 3. Generates Full Outer Join, need to parameterize this to handle more than u4
 CREATE TABLE ResultTable AS
 SELECT COALESCE(C1.inst, C2.inst, C3.inst, C4.inst) AS inst,
        COALESCE(C1.name, C2.name, C3.name, C4.name) AS name,
@@ -72,7 +71,7 @@ FULL OUTER JOIN C3 ON COALESCE(C1.inst, C2.inst) = C3.inst AND COALESCE(C1.name,
 FULL OUTER JOIN C4 ON COALESCE(C1.inst, C2.inst, C3.inst) = C4.inst AND COALESCE(C1.name, C2.name, C3.name) = C4.name;
 
 
---Generates U Table
+--Generates U Table, not directly part but just made it easier
 CREATE TABLE combined_table AS
 SELECT u1.u1 AS u1, u2.u2 AS u2, u3.u3 AS u3, u4.u4 AS u4
 FROM u1
