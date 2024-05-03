@@ -1,0 +1,100 @@
+create C table;
+
+
+DO $$
+DECLARE
+    doms text[] := ARRAY['com', 'edu'];
+    v_nums int[] := ARRAY[1, 2, 3, 4];
+    i int;
+    start_year int := 2000;
+    end_year int := 2004;
+BEGIN
+    FOR i IN 1..2 LOOP
+        FOR j IN 1..2 LOOP
+            EXECUTE format('
+                CREATE TABLE C%s AS
+                SELECT x.inst, x.name, COUNT(DISTINCT z.pubid) as v%s
+                FROM Author x, Authored y, Publication2 z
+                WHERE x.id = y.id 
+                    AND y.pubid = z.pubid 
+                    AND z.venue = ''SIGMOD Conference'' 
+                    AND x.dom = ''%s''
+                    AND %s <= z.year AND z.year <= %s
+                GROUP BY CUBE (x.inst, x.name)', v_nums[(i-1)*2+j], v_nums[(i-1)*2+j], doms[j], start_year, end_year);
+        END LOOP;
+        -- Increment start_year and end_year after each iteration of the outer loop
+        start_year := start_year + 1; -- increment by 5
+        end_year := end_year + 1;     -- increment by 5
+    END LOOP;
+END$$;
+
+This generates U values
+
+DO $$
+DECLARE
+    doms text[] := ARRAY['com', 'edu'];
+    v_nums int[] := ARRAY[1, 2, 3, 4];
+    i int;
+    start_year int := 2000;
+    end_year int := 2004;
+BEGIN
+    FOR i IN 1..2 LOOP
+        FOR j IN 1..2 LOOP
+            EXECUTE format('
+                CREATE TABLE U%s AS
+                SELECT COUNT(DISTINCT z.pubid) as u%s
+                FROM Author x, Authored y, Publication2 z
+                WHERE x.id = y.id 
+                    AND y.pubid = z.pubid 
+                    AND z.venue = ''SIGMOD Conference'' 
+                    AND x.dom = ''%s''
+                    AND %s <= z.year AND z.year <= %s
+                ', v_nums[(i-1)*2+j], v_nums[(i-1)*2+j], doms[j], start_year, end_year);
+        END LOOP;
+        -- Increment start_year and end_year after each iteration of the outer loop
+        start_year := start_year + 1; -- increment by 5
+        end_year := end_year + 1;     -- increment by 5
+    END LOOP;
+END$$;
+
+
+-- 3. Generates Full Outer Join, need to parameterize this to handle more than u4
+CREATE TABLE ResultTable AS
+SELECT COALESCE(C1.inst, C2.inst, C3.inst, C4.inst) AS inst,
+       COALESCE(C1.name, C2.name, C3.name, C4.name) AS name,
+       COALESCE(C1.v1, 0) AS v1,
+       COALESCE(C2.v2, 0) AS v2,
+       COALESCE(C3.v3, 0) AS v3,
+       COALESCE(C4.v4, 0) AS v4
+FROM C1
+FULL OUTER JOIN C2 ON C1.inst = C2.inst AND C1.name = C2.name
+FULL OUTER JOIN C3 ON COALESCE(C1.inst, C2.inst) = C3.inst AND COALESCE(C1.name, C2.name) = C3.name
+FULL OUTER JOIN C4 ON COALESCE(C1.inst, C2.inst, C3.inst) = C4.inst AND COALESCE(C1.name, C2.name, C3.name) = C4.name;
+
+
+--Generates U Table
+CREATE TABLE combined_table AS
+SELECT u1.u1 AS u1, u2.u2 AS u2, u3.u3 AS u3, u4.u4 AS u4
+FROM u1
+FULL JOIN u2 ON true
+FULL JOIN u3 ON true
+FULL JOIN u4 ON true;
+
+drop table u1,u2,u3,u4;
+This puts them in a table
+
+-- Create 4. Create U Interval
+CREATE VIEW result_view AS
+SELECT r.inst,
+       r.name,
+       r.v1,
+       r.v2,
+       r.v3,
+       r.v4,
+       COALESCE(ct.u1, 0) AS u1,
+       COALESCE(ct.u2, 0) AS u2,
+       COALESCE(ct.u3, 0) AS u3,
+       COALESCE(ct.u4, 0) AS u4,
+       (ct.u1 - r.v1 + ct.u2 - r.v2 + ct.u3 - r.v3 + ct.u4 - r.v4) AS uint
+FROM ResultTable r
+CROSS JOIN (SELECT * FROM combined_table LIMIT 1) ct;
