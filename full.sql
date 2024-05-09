@@ -36,10 +36,29 @@ SELECT id,
            WHEN strpos(homepage, '.com') > 0 THEN 'com'
            ELSE NULL 
        END AS dom
-FROM author
-WHERE strpos(homepage, '.edu') > 0 OR strpos(homepage, '.com') > 0;
+FROM author;
 
---Generate Cube Tables
+DO $$ 
+BEGIN
+    FOR i IN 1..20 LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = format('c%s', i)) THEN
+            EXECUTE format('DROP TABLE IF EXISTS %I', 'c'||i);
+        END IF;
+    END LOOP;
+END $$;
+
+DO $$ 
+BEGIN
+    FOR i IN 1..20 LOOP
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = format('u%s', i)) THEN
+            EXECUTE format('DROP TABLE IF EXISTS %I', 'u'||i);
+        END IF;
+    END LOOP;
+END $$;
+
+drop table if exists resulttable cascade;
+
+drop table if exists combined_table cascade;
 
 DO $$
 DECLARE
