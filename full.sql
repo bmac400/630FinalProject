@@ -10,11 +10,11 @@ SELECT pubid,
        year,
        CASE 
            WHEN pubkey LIKE '%conf/pods%' THEN 'PODS'
-           WHEN pubkey LIKE '%conf/sigmod%' THEN 'SIGMOD'
+           WHEN pubkey LIKE '%sigmod%' THEN 'SIGMOD'
            ELSE NULL 
        END AS venue
 FROM publication
-WHERE pubkey LIKE '%conf/pods%' OR pubkey LIKE '%conf/sigmod%';
+WHERE pubkey LIKE '%conf/pods%' OR pubkey LIKE '%sigmod%';
 
 CREATE TABLE author2 (
     id INT PRIMARY KEY,
